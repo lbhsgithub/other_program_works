@@ -1,0 +1,123 @@
+/CLEAR
+/TITLE, continuous Bridge Static Analysis   
+/COM,Structural				        !*选择分析类型为结构分析*
+/PREP7 					  	 !*进入前处理器*
+ET,1,BEAM3
+R,1,0.00485883,0.00022855,7.4E-6,0.144,0.4
+MP,EX,1,2.1E11                                   !*定义1号材料弹性模量*
+MP,PRXY,1,0.3                                    !*定义1号材料泊松比*
+MP,DENS,1,7850                                  !*定义1号材料密度*
+
+N,1,0,0,0, , , ,          
+NGEN,51,1,ALL, , ,5, , ,1,                           !*复制节点*
+*DO,I,1,50,1   
+	E,I,I+1
+*ENDDO
+
+/solu 
+antype,0 
+nlgeom,on 
+nropt,full,,on 
+D,1, , , , , ,UX,UY, , , , 
+*DO,I,1,5,1
+	D,1+10*I,UY,,,,
+*ENDDO 
+
+!*施工第5节段*
+time,1
+*DO,I,43,50,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I,WAN_J     !*只输出左端弯矩即可，因为下一个单元的左端弯矩就是上一个单元的右端弯矩，只有最后一个单元的右端弯矩被漏掉，但显然是0*
+ 
+!*施工第4节段*
+/solu
+time,2
+*DO,I,33,42,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+esel,,,,43,50,  
+ekill,all
+esel,all
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I 
+
+!*施工第3节段*
+/solu
+time,3
+*DO,I,23,32,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+esel,,,,33,50,  
+ekill,all
+esel,all
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I 
+
+!*施工第2节段*
+/solu
+time,4
+*DO,I,13,22,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+esel,,,,23,32,  
+ekill,all
+esel,all
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I 
+
+!*施工第1节段*
+/solu
+time,5
+*DO,I,1,12,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+esel,,,,13,22,  
+ekill,all
+esel,all
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I 
+
+
+
+/POST1                 !进入后处理器 PLDISP,1
+
+
+ETABLE,WAN_I,SMISC, 6                             !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                            !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                               !*显示弯矩图*  
+
+!*一个一个画*  
+
+
+!*成桥*
+*DO,I,1,50,1   
+	SFBEAM,I,1,PRES,260,260, , , , ,0
+*ENDDO
+solve
+/POST1 
+ETABLE,WAN_I,SMISC, 6                           !*定义单元表，SMISC的第6项，左端弯矩*    
+ETABLE,WAN_J,SMISC, 12                          !*定义单元表，SMISC的第12项，右端弯矩，可以省略* 
+PLLS,WAN_I,WAN_J,-1,0                           !*显示弯矩图*  
+PRETAB,WAN_I,WAN_J    
