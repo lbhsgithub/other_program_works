@@ -16,7 +16,7 @@ while logical:
 		('钢管壁厚(mm):','4.68'),
 		('柱长(mm):','1500'),
 		('梁长(mm):','2600'),
-		('梁宽(mm):','100'),
+		('梁宽(mm):','150'),
 		('梁高(mm):','150'),
 		('梁翼缘厚度(mm):','5.62'),
 		('梁腹板厚度(mm):','5.62'),
@@ -32,8 +32,7 @@ while logical:
 	listtry=[Modelname,diameter,thickness,length,b_span,b_width,b_depth,b_tf,b_tw,flange_t,fyf,fyw,fyt,fcu,load,displacement,jobname]  #?
 
 	if listtry==[None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]:
-		
-		
+		logical=False
 	else:
 		logical=False
 		
@@ -626,7 +625,7 @@ while logical:
 		offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
 	#螺栓赋予截面
 	p = myModel.parts['bolt']
-	region = regionToolset.Region(cells=p.cells[0:4])
+	region = regionToolset.Region(cells=p.cells[0:3])
 	p.SectionAssignment(region=region, sectionName='Section-bolt', 
 		offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
 	
@@ -715,10 +714,11 @@ while logical:
 	a.Surface(side1Faces=a.instances['flange-2'].faces[7:8]+a.instances['joint-1'].faces[23:24], name='bolthole-xia-8')
 
 	#4 Step
-	myModel.StaticStep(name='S1-Pretension10N', previous='Initial',maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
-	myModel.StaticStep(name='S2-Pretension15kN', previous='S1-Pretension10N',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
-	myModel.StaticStep(name='S3-FixBoltLength', previous='S2-Pretension15kN',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
-	myModel.StaticStep(name='axial load', previous='S3-FixBoltLength',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
+	myModel.StaticStep(name='S1-FixPlate-Pretension10N', previous='Initial',maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
+	myModel.StaticStep(name='S2-FreePlate-Pretension10N', previous='S1-FixPlate-Pretension10N',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
+	myModel.StaticStep(name='S3-Pretension15kN', previous='S2-FreePlate-Pretension10N',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
+	myModel.StaticStep(name='S4-FixBoltLength', previous='S3-Pretension15kN',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
+	myModel.StaticStep(name='axial load', previous='S4-FixBoltLength',timePeriod=1, maxNumInc=500, initialInc=0.01, minInc=1e-09, maxInc=0.1, nlgeom=ON)
 	myModel.StaticStep(name='cyclic load', previous='axial load',timePeriod=1, maxNumInc=2000, initialInc=0.00001, minInc=1e-09, maxInc=0.05, nlgeom=ON)   #nlgeom几何非线性
 	#4'过程变量和场变量设置  按默认的来
 
@@ -966,46 +966,22 @@ while logical:
 #6.3螺栓荷载
 	region = regionToolset.Region(side1Faces=a.instances['bolt-1'].faces[0:1])
 	datumAxis = myModel.rootAssembly.datums[1].axis3
-	myModel.BoltLoad(name='Load Pretension-1', createStepName='S1-Pretension10N', region=region, magnitude=10.0, boltMethod=APPLY_FORCE, datumAxis=datumAxis)
-	myModel.loads['Load Pretension-1'].setValuesInStep(stepName='S2-Pretension15kN', magnitude=7500.0, boltMethod=APPLY_FORCE)
-	myModel.loads['Load Pretension-1'].setValuesInStep(stepName='S3-FixBoltLength', boltMethod=FIX_LENGTH)
-	name1=list('bolt-1-rad-2')
-	name2=list('Load Pretension-2')
-	for i in range(2,9):
-		name1[11]=str(i)
-		name2[16]=str(i)
-		region = regionToolset.Region(side1Faces=a.instances["".join(name1)].faces[0:1])
-		datumAxis = myModel.rootAssembly.datums[1].axis3
-		myModel.BoltLoad(name="".join(name2), createStepName='S1-Pretension10N', region=region, magnitude=10.0, boltMethod=APPLY_FORCE, datumAxis=datumAxis)
-		myModel.loads["".join(name2)].setValuesInStep(stepName='S2-Pretension15kN', magnitude=7500.0, boltMethod=APPLY_FORCE)
-		myModel.loads["".join(name2)].setValuesInStep(stepName='S3-FixBoltLength', boltMethod=FIX_LENGTH)
-	
-	region = regionToolset.Region(side1Faces=a.instances['bolt-2'].faces[0:1])
-	datumAxis = myModel.rootAssembly.datums[1].axis3
-	myModel.BoltLoad(name='Load Pretension-xia-1', createStepName='S1-Pretension10N', region=region, magnitude=10.0, boltMethod=APPLY_FORCE, datumAxis=datumAxis)
-	myModel.loads['Load Pretension-xia-1'].setValuesInStep(stepName='S2-Pretension15kN', magnitude=7500.0, boltMethod=APPLY_FORCE)
-	myModel.loads['Load Pretension-xia-1'].setValuesInStep(stepName='S3-FixBoltLength', boltMethod=FIX_LENGTH)
-	name1=list('bolt-2-rad-2')
-	name2=list('Load Pretension-xia-2')
-	for i in range(2,9):
-		name1[11]=str(i)
-		name2[20]=str(i)
-		region = regionToolset.Region(side1Faces=a.instances["".join(name1)].faces[0:1])
-		datumAxis = myModel.rootAssembly.datums[1].axis3
-		myModel.BoltLoad(name="".join(name2), createStepName='S1-Pretension10N', region=region, magnitude=10.0, boltMethod=APPLY_FORCE, datumAxis=datumAxis)
-		myModel.loads["".join(name2)].setValuesInStep(stepName='S2-Pretension15kN', magnitude=7500.0, boltMethod=APPLY_FORCE)
-		myModel.loads["".join(name2)].setValuesInStep(stepName='S3-FixBoltLength', boltMethod=FIX_LENGTH)	
-		
+	myModel.BoltLoad(name='bolt load1', 
+		createStepName='S1-FixPlate-Pretension10N', 
+		region=region, magnitude=10.0, boltMethod=APPLY_FORCE, datumAxis=datumAxis)
+	myModel.loads['bolt load1'].setValuesInStep(
+		stepName='S2-FreePlate-Pretension10N', magnitude=7500.0, boltMethod=APPLY_FORCE)
+	#修改格式和写完代码
 
 #7 mesh-网格划分                      a为#Assembly模块a = myModel.rootAssembly  a与p  全局与局部
-	meshsize=30
+	meshsize=40
 #7.1 beam-梁段网格划分
 	p = myModel.parts['beam']
 	p.seedPart(size=meshsize, deviationFactor=0.1, minSizeFactor=0.1)
 	e = p.edges
-	p.seedEdgeByNumber(edges=e[33:34]+e[41:42]+e[53:54]+e[61:62], number=6, constraint=FINER)
-	p.seedEdgeByNumber(edges=e[49:50], number=10, constraint=FINER)
-	p.seedEdgeByNumber(edges=e[19:20], number=30, constraint=FINER)
+	p.seedEdgeByNumber(edges=e[33:34]+e[41:42]+e[53:54]+e[61:62], number=4, constraint=FINER)
+	p.seedEdgeByNumber(edges=e[49:50], number=6, constraint=FINER)
+	p.seedEdgeByNumber(edges=e[19:20], number=20, constraint=FINER)
 	p.setMeshControls(regions=p.cells[0:6], technique=SWEEP, algorithm=ADVANCING_FRONT)
 	p.generateMesh()
 #7.2 bolt mesh
@@ -1037,8 +1013,6 @@ while logical:
 	p.seedEdgeByNumber(edges=e[90:94]+e[98:102]+e[115:123], number=12, constraint=FINER)
 	p.seedEdgeByNumber(edges=e[53:57]+e[60:64]+e[74:82], number=12, constraint=FINER)
 	p.seedEdgeByNumber(edges=e[26:27]+e[36:37]+e[39:40]+e[123:124], number=50, constraint=FINER)
-	p.seedEdgeByNumber(edges=e[37:39], number=25, constraint=FINER) 
-	p.seedEdgeByNumber(edges=e[27:28]+e[31:32]+e[40:41]+e[44:46]+e[49:50]+e[89:90]+e[94:95], number=6, constraint=FINER)
 	p.generateMesh()
 #7.6 tube
 	p = myModel.parts['tube']
@@ -1052,11 +1026,5 @@ while logical:
 	p.seedEdgeByNumber(edges=p.edges[0:2], number=30, constraint=FINER)
 	p.setMeshControls(regions=p.cells[0:1], algorithm=ADVANCING_FRONT)
 	p.generateMesh()
-	#提交job               #在不同的电脑上记得把线程改一下
-	mdb.Job(name=jobname, model=Modelname, description='', type=ANALYSIS, 
-		atTime=None, waitMinutes=0, waitHours=0, queue=None, memory=85, 
-		memoryUnits=PERCENTAGE, getMemoryFromAnalysis=True, 
-		explicitPrecision=SINGLE, nodalOutputPrecision=SINGLE, echoPrint=OFF, 
-		modelPrint=OFF, contactPrint=OFF, historyPrint=OFF, userSubroutine='', 
-		scratch='', multiprocessingMode=THREADS, numCpus=8, numDomains=8)
+
 #视图充满屏幕
